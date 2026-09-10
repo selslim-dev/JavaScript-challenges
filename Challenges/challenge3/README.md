@@ -1,13 +1,119 @@
-The Modular Restaurant Financial Engine: Advanced Tip Calculator ChallengeOverviewSteven wants a robust system to calculate restaurant tips across multiple bills. In his country, standard tipping rules apply based on the bill value, but a modern software architecture is required to handle data at scale, maintain clean separation of concerns, and strictly avoid procedural anti-patterns like procedural if/else branching.Core Architectural RequirementsTo transition this from a basic script into a professional, production-ready module, your implementation must satisfy the following technical standards:1. Separation of Concerns (Modular Structure)calculator.js: Contains pure logic, rule configuration, and data transformation functions. This file must have zero dependencies on terminal inputs or console logs.app.js: Handles user orchestration, input collection via prompt-sync, and output presentation.2. Configurable Rule EngineDo not hardcode magic numbers directly into functions. Define a configuration object (or parameters) for thresholds and tip rates so that business rules can be updated dynamically.3. Pure Functions & ImmutabilityTip calculation must rely strictly on ternary operators (? :) instead of if/else statements.Functions must be pure: given the same input, they must always return the exact same output without side effects.4. Batch Processing with Array MethodsThe engine must accept an array of multiple bill values, transform them using .map(), and calculate aggregated financial summaries (total revenue, total tips, and average tips) using .reduce().Business Logic SpecificationsTip Brackets:If the bill value is between 50 and 300 (inclusive: $\ge 50$ and $\le 300$), the tip rate is 15% ($0.15$).For any bill value outside this range, the tip rate is 20% ($0.20$).Mathematical Calculation:$\text{Tip} = \text{Bill} \times \text{Tip Rate}$$\text{Total} = \text{Bill} + \text{Tip}$Test DatasetData Set 1: Test with bill values [275, 40, 430]Expected 275: Tip = 41.25, Total = 316.25 (Falls in 50–300 range $\rightarrow$ 15%)Expected 40: Tip = 8.00, Total = 48.00 (Outside range $\rightarrow$ 20%)Expected 430: Tip = 86.00, Total = 516.00 (Outside range $\rightarrow$ 20%)Expected Output FormatWhen executing your application via the terminal, the program should prompt the user for input, process the batch, and display output formatted cleanly as follows
-=== Restaurant Financial Engine ===
-Enter bill values separated by commas: 275, 40, 430
+# Modular Restaurant Financial Engine: Production-Grade Tip & Batch Processing System
 
---- Individual Bill Breakdown ---
-The bill was 275, the tip was 41.25, and the total value was 316.25
-The bill was 40, the tip was 8, and the total value was 48
-The bill was 430, the tip was 86, and the total value was 516
+## Executive Summary & Architectural Vision
 
---- Batch Summary ---
-Total Revenue: 880.25
-Total Tips Generated: 135.25
-Average Tip: 45.08
+The **Modular Restaurant Financial Engine** is an advanced, production-grade JavaScript application designed to transition simple procedural logic into a clean, highly scalable, and professional codebase. Moving far beyond basic syntax drills, this system implements core software engineering principles such as **Separation of Concerns**, **Pure Functions**, **Configurable Rule Engines**, and **Functional Array Transformations**. 
+
+In modern software development, hardcoding business rules or writing monolithic scripts that mix user interaction with core math creates fragile applications that are difficult to test, maintain, or scale. This project addresses those challenges by isolating pure computational logic from terminal orchestration, ensuring every component has a single, well-defined responsibility.
+
+---
+
+## Architectural Principles & Core Concepts
+
+### 1. Separation of Concerns
+The application cleanly separates user input and terminal presentation from mathematical evaluation and data processing. By keeping the calculation engine completely independent of side effects (like `console.log` or synchronous terminal prompts), the core logic becomes entirely deterministic and easily portable to web or API environments.
+
+### 2. Configurable Rule Engines (Eliminating Magic Numbers)
+Instead of scattering literal values like `50`, `300`, `0.15`, and `0.2` throughout the codebase, all business thresholds and percentages are centralized inside a configuration object (`DEFAULT_CONFIG`). If the restaurant modifies its tipping brackets or tax structures in the future, developers only need to update a single configuration definition rather than hunting through nested conditional blocks.
+
+### 3. Pure Functions & Ternary Logic
+To maintain functional purity, the calculation engine strictly avoids procedural `if/else` branching chains for value checks. Instead, it leverages concise **ternary operators** (`? :`) to evaluate conditions inline, returning immutable data structures that make tracking state changes trivial.
+
+### 4. Advanced Data Transformation with ES6 Array Methods
+Rather than handling individual data points manually via legacy loops, the engine utilizes modern functional programming constructs:
+* **`Array.prototype.map()`**: Transforms an array of raw numerical bills into rich, structured financial objects containing individual bill values, calculated tips, and final totals.
+* **`Array.prototype.reduce()`**: Aggregates batch datasets to compute total revenue, total tip generation, and average statistical metrics across an arbitrary number of inputs.
+
+---
+
+## Complete Unified Source Code
+
+The complete standalone implementation combining configuration, pure calculation rules, batch aggregation, and CLI orchestration into a single executable file:
+
+```javascript
+const prompt = require('prompt-sync')({ sigint: true });
+
+// Centralized configuration object to prevent hardcoded magic numbers
+const DEFAULT_CONFIG = {
+  minThreshold: 50,
+  maxThreShold: 300,
+  minTipVal: 0.15,
+  maxTipVal: 0.2,
+};
+
+/**
+ * Calculates the tip and total for a single bill using a ternary operator.
+ * Operates as a pure function with no external side effects.
+ * 
+ * @param {number} bill - The raw bill value entered by the user
+ * @param {Object} config - Configuration object containing thresholds and rates
+ * @returns {Object} An immutable object containing bill, tip, and total
+ */
+const calculateBillDetails = function (bill, config = DEFAULT_CONFIG) {
+  const { minThreshold, maxThreShold, minTipVal, maxTipVal } = config;
+  
+  // Strict ternary implementation replacing traditional if/else blocks
+  const tipRate =
+    bill >= minThreshold && bill <= maxThreShold ? minTipVal : maxTipVal;
+  
+  const tip = bill * tipRate;
+  const total = bill + tip;
+
+  return {
+    bill,
+    tip: Number(tip.toFixed(2)),
+    total: Number(total.toFixed(2)),
+  };
+};
+
+/**
+ * Processes an array of bills, transforming them and calculating aggregate statistics.
+ * 
+ * @param {number[]} bills - An array of numerical bill amounts
+ * @returns {Object} Comprehensive breakdown and summary statistics
+ */
+const processBatchBills = function (bills) {
+  // Transform raw numbers into rich breakdown objects via map
+  const processed = bills.map((bill) => calculateBillDetails(bill));
+  
+  // Aggregate financial metrics using reduce
+  const totalRevenue = processed.reduce((sum, item) => sum + item.total, 0);
+  const totalTips = processed.reduce((sum, item) => sum + item.tip, 0);
+
+  return {
+    breakdown: processed,
+    summary: {
+      totalRevenue: Number(totalRevenue.toFixed(2)),
+      totalTips: Number(totalTips.toFixed(2)),
+      averageTip: Number((totalTips / bills.length).toFixed(2)),
+    },
+  };
+};
+
+// --- Presentation & Orchestration Layer ---
+
+console.log("=== Restaurant Financial Engine ===");
+const inputBills = prompt("Enter bill values separated by commas (e.g., 275, 40, 430): ");
+
+// Parse, sanitize, and validate user string input into a clean array of numbers
+const bills = inputBills
+  .split(',')
+  .map(val => parseFloat(val.trim()))
+  .filter(val => !isNaN(val));
+
+if (bills.length === 0) {
+    console.log("Invalid input. Please provide valid numeric bill values.");
+} else {
+    // Process the batch dataset through the core engine
+    const results = processBatchBills(bills);
+
+    console.log("\n--- Individual Bill Breakdown ---");
+    results.breakdown.forEach(item => {
+        console.log(`The bill was ${item.bill}, the tip was ${item.tip}, and the total value was ${item.total}`);
+    });
+
+    console.log("\n--- Batch Summary ---");
+    console.log(`Total Revenue: ${results.summary.totalRevenue}`);
+    console.log(`Total Tips Generated: ${results.summary.totalTips}`);
+    console.log(`Average Tip: ${results.summary.averageTip}`);
+}
